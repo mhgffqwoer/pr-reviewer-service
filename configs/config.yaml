@@ -1,0 +1,10 @@
+logging:
+  level: debug
+  rotation:
+    name: "./logs/app.log"
+    max_size: 1
+    max_backups: 1
+    max_age: 1
+    duplicate_to_console: true
+database: 
+  max_connections: 10

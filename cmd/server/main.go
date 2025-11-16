@@ -1,0 +1,46 @@
+package main
+
+import (
+	"github.com/mhgffqwoer/pr-service/internal/repositories"
+	"github.com/mhgffqwoer/pr-service/internal/services"
+	"github.com/mhgffqwoer/pr-service/internal/transport/http/handlers"
+	"github.com/mhgffqwoer/pr-service/internal/transport/http/router"
+	"github.com/mhgffqwoer/pr-service/pkg/config"
+	"github.com/mhgffqwoer/pr-service/pkg/db"
+	"github.com/mhgffqwoer/pr-service/pkg/logger"
+	"github.com/mhgffqwoer/pr-service/pkg/server"
+	"go.uber.org/zap"
+)
+
+func main() {
+	cfg := config.Get()
+
+	log := logger.InitLogger(cfg.Logging)
+	defer func() { _ = log.Sync() }()
+
+	pool, err := db.Connect(cfg.Database)
+	if err != nil || pool == nil {
+		log.Fatalw("Failed to connect to database", zap.Error(err))
+	}
+	defer func() { _ = pool.Close() }()
+
+	teamRepo := repositories.NewTeamRepository(pool)
+	userRepo := repositories.NewUserRepository(pool)
+	prRepo := repositories.NewPullRequestRepository(pool)
+
+	service := services.NewService(prRepo, userRepo, teamRepo)
+
+	r := router.New()
+	h := handlers.New(service)
+	r.HandleFunc("/health", h.Health)
+	r.HandleFunc("/team/add", h.CreateTeam)
+	r.HandleFunc("/team/get", h.GetTeam)
+	r.HandleFunc("/users/setIsActive", h.SetUserActive)
+	r.HandleFunc("/users/getReview", h.GetReview)
+	r.HandleFunc("/pullRequest/create", h.CreatePR)
+	r.HandleFunc("/pullRequest/merge", h.MergePR)
+	r.HandleFunc("/pullRequest/reassign", h.ReassignPR)
+
+	srv := server.New(cfg.Server, r)
+	srv.Start()
+}
