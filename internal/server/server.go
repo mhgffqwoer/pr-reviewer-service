@@ -9,8 +9,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/mhgffqwoer/pr-service/pkg/config"
-	"github.com/mhgffqwoer/pr-service/pkg/logger"
+	"github.com/mhgffqwoer/pr-service/internal/config"
+	"github.com/mhgffqwoer/pr-service/internal/logger"
 	"go.uber.org/zap"
 )
 

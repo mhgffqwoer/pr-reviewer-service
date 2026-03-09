@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/mhgffqwoer/pr-service/pkg/logger"
+	"github.com/mhgffqwoer/pr-service/internal/logger"
 )
 
 func (h *Handlers) SetUserActive(w http.ResponseWriter, r *http.Request) {

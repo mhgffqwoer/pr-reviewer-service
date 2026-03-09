@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/mhgffqwoer/pr-service/internal/models"
-	"github.com/mhgffqwoer/pr-service/pkg/logger"
+	"github.com/mhgffqwoer/pr-service/internal/logger"
 )
 
 func (h *Handlers) CreatePR(w http.ResponseWriter, r *http.Request) {

@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/mhgffqwoer/pr-service/internal/services"
-	"github.com/mhgffqwoer/pr-service/pkg/logger"
+	"github.com/mhgffqwoer/pr-service/internal/logger"
 )
 
 type Handlers struct {

@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/mhgffqwoer/pr-service/internal/models"
-	"github.com/mhgffqwoer/pr-service/pkg/logger"
+	"github.com/mhgffqwoer/pr-service/internal/logger"
 )
 
 func (h *Handlers) CreateTeam(w http.ResponseWriter, r *http.Request) {

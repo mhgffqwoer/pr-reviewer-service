@@ -7,7 +7,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
-	"github.com/mhgffqwoer/pr-service/pkg/config"
+	"github.com/mhgffqwoer/pr-service/internal/config"
 )
 
 var (

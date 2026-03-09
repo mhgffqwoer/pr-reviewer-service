@@ -3,7 +3,7 @@ package logger
 import (
 	"os"
 
-	"github.com/mhgffqwoer/pr-service/pkg/config"
+	"github.com/mhgffqwoer/pr-service/internal/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"

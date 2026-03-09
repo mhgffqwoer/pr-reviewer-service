@@ -6,8 +6,8 @@ import (
 	"math/rand/v2"
 	"time"
 
+	"github.com/mhgffqwoer/pr-service/internal/logger"
 	"github.com/mhgffqwoer/pr-service/internal/models"
-	"github.com/mhgffqwoer/pr-service/pkg/logger"
 )
 
 var (

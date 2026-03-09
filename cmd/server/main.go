@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"github.com/mhgffqwoer/pr-service/internal/repositories"
 	"github.com/mhgffqwoer/pr-service/internal/services"
-	"github.com/mhgffqwoer/pr-service/internal/transport/http/handlers"
-	"github.com/mhgffqwoer/pr-service/internal/transport/http/router"
-	"github.com/mhgffqwoer/pr-service/pkg/config"
-	"github.com/mhgffqwoer/pr-service/pkg/db"
-	"github.com/mhgffqwoer/pr-service/pkg/logger"
-	"github.com/mhgffqwoer/pr-service/pkg/server"
+	"github.com/mhgffqwoer/pr-service/internal/handlers"
+	"github.com/mhgffqwoer/pr-service/internal/router"
+	"github.com/mhgffqwoer/pr-service/internal/config"
+	"github.com/mhgffqwoer/pr-service/internal/db"
+	"github.com/mhgffqwoer/pr-service/internal/logger"
+	"github.com/mhgffqwoer/pr-service/internal/server"
 	"go.uber.org/zap"
 )
 

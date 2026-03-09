@@ -8,7 +8,7 @@ import (
 
 	"github.com/mhgffqwoer/pr-service/internal/models"
 	"github.com/mhgffqwoer/pr-service/internal/services"
-	"github.com/mhgffqwoer/pr-service/pkg/logger"
+	"github.com/mhgffqwoer/pr-service/internal/logger"
 )
 
 func handleError(w http.ResponseWriter, err error, opts ...string) {
