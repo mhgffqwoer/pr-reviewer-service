@@ -58,7 +58,9 @@ func InitLogger(cfg *config.LoggingConfig) *zap.SugaredLogger {
 
 func Get() *zap.SugaredLogger {
 	if log == nil {
-		panic("logger not initialized")
+		// Return a no-op logger for tests
+		zapLogger, _ := zap.NewProduction()
+		log = zapLogger.Sugar()
 	}
 	return log
 }

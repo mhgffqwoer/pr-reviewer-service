@@ -41,7 +41,7 @@ var (
 	once sync.Once
 )
 
-func init() {
+func Init() error {
 	var loadErr error
 	once.Do(func() {
 		viper.SetConfigName("config")
@@ -73,9 +73,7 @@ func init() {
 			return
 		}
 	})
-	if loadErr != nil {
-		panic(fmt.Sprintf("Config init failed: %v", loadErr))
-	}
+	return loadErr
 }
 
 func Get() *Config {
