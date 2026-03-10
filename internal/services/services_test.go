@@ -90,22 +90,7 @@ func (m *MockTeamRepository) Save(team *models.Team) error {
 	return args.Error(0)
 }
 
-// Mock interfaces for testing
-type MockPullRequestRepositoryInterface interface {
-	PullRequestRepository
-	mock.TestingT
-}
-
-type MockUserRepositoryInterface interface {
-	UserRepository
-	mock.TestingT
-}
-
-type MockTeamRepositoryInterface interface {
-	TeamRepository
-	mock.TestingT
-}
-
+// PullRequestService tests
 func TestPullRequestService_Create(t *testing.T) {
 	tests := []struct {
 		name              string
@@ -453,6 +438,323 @@ func TestPullRequestService_Reassign(t *testing.T) {
 			prRepo.AssertExpectations(t)
 			userRepo.AssertExpectations(t)
 			teamRepo.AssertExpectations(t)
+		})
+	}
+}
+
+// TeamService tests
+func TestTeamService_AddTeam(t *testing.T) {
+	tests := []struct {
+		name          string
+		teamName      string
+		mockSetup     func(repo *MockTeamRepository)
+		expectedError error
+		expectedTeam  *models.Team
+	}{
+		{
+			name:     "successful team addition",
+			teamName: "team1",
+			mockSetup: func(repo *MockTeamRepository) {
+				repo.On("Exists", "team1").Return(false)
+				repo.On("Save", mock.AnythingOfType("*models.Team")).Return(nil)
+			},
+			expectedError: nil,
+			expectedTeam: &models.Team{
+				TeamName: "team1",
+				Members:  nil,
+			},
+		},
+		{
+			name:     "team already exists",
+			teamName: "team1",
+			mockSetup: func(repo *MockTeamRepository) {
+				repo.On("Exists", "team1").Return(true)
+			},
+			expectedError: ErrTeamExists,
+			expectedTeam:  nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := &MockTeamRepository{}
+			tt.mockSetup(repo)
+
+			service := NewTeamService(repo)
+			result, err := service.AddTeam(&models.Team{TeamName: tt.teamName})
+
+			if tt.expectedError != nil {
+				assert.Error(t, err)
+				assert.ErrorIs(t, err, tt.expectedError)
+				assert.Nil(t, result)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, result)
+				assert.Equal(t, tt.expectedTeam.TeamName, result.TeamName)
+				assert.Equal(t, tt.expectedTeam.Members, result.Members)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestTeamService_GetTeam(t *testing.T) {
+	tests := []struct {
+		name          string
+		teamName      string
+		mockSetup     func(repo *MockTeamRepository)
+		expectedError error
+		expectedTeam  *models.Team
+	}{
+		{
+			name:     "successful get team",
+			teamName: "team1",
+			mockSetup: func(repo *MockTeamRepository) {
+				repo.On("GetByName", "team1").Return(&models.Team{
+					TeamName: "team1",
+					Members: []models.TeamMember{
+						{UserID: "user1", Username: "Alice", IsActive: true},
+						{UserID: "user2", Username: "Bob", IsActive: true},
+					},
+				}, nil)
+			},
+			expectedError: nil,
+			expectedTeam: &models.Team{
+				TeamName: "team1",
+				Members: []models.TeamMember{
+					{UserID: "user1", Username: "Alice", IsActive: true},
+					{UserID: "user2", Username: "Bob", IsActive: true},
+				},
+			},
+		},
+		{
+			name:     "team not found",
+			teamName: "nonexistent",
+			mockSetup: func(repo *MockTeamRepository) {
+				repo.On("GetByName", "nonexistent").Return((*models.Team)(nil), errors.New("team not found"))
+			},
+			expectedError: ErrNotFound,
+			expectedTeam:  nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := &MockTeamRepository{}
+			tt.mockSetup(repo)
+
+			service := NewTeamService(repo)
+			result, err := service.GetTeam(tt.teamName)
+
+			if tt.expectedError != nil {
+				assert.Error(t, err)
+				assert.ErrorIs(t, err, tt.expectedError)
+				assert.Nil(t, result)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, result)
+				assert.Equal(t, tt.expectedTeam.TeamName, result.TeamName)
+				assert.Equal(t, tt.expectedTeam.Members, result.Members)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+}
+
+// UserService tests
+func TestUserService_SetActive(t *testing.T) {
+	tests := []struct {
+		name          string
+		userID        string
+		isActive      bool
+		mockSetup     func(repo *MockUserRepository)
+		expectedError error
+		expectedUser  *models.User
+	}{
+		{
+			name:     "successful activation",
+			userID:   "user1",
+			isActive: true,
+			mockSetup: func(repo *MockUserRepository) {
+				repo.On("Exists", "user1").Return(true)
+				repo.On("GetByID", "user1").Return(&models.User{
+					UserID:   "user1",
+					Username: "Alice",
+					TeamName: "team1",
+					IsActive: false,
+				}, nil)
+				repo.On("Save", mock.AnythingOfType("*models.User")).Return(nil)
+			},
+			expectedError: nil,
+			expectedUser: &models.User{
+				UserID:   "user1",
+				Username: "Alice",
+				TeamName: "team1",
+				IsActive: true,
+			},
+		},
+		{
+			name:     "successful deactivation",
+			userID:   "user1",
+			isActive: false,
+			mockSetup: func(repo *MockUserRepository) {
+				repo.On("Exists", "user1").Return(true)
+				repo.On("GetByID", "user1").Return(&models.User{
+					UserID:   "user1",
+					Username: "Alice",
+					TeamName: "team1",
+					IsActive: true,
+				}, nil)
+				repo.On("Save", mock.AnythingOfType("*models.User")).Return(nil)
+			},
+			expectedError: nil,
+			expectedUser: &models.User{
+				UserID:   "user1",
+				Username: "Alice",
+				TeamName: "team1",
+				IsActive: false,
+			},
+		},
+		{
+			name:     "user not found",
+			userID:   "nonexistent",
+			isActive: true,
+			mockSetup: func(repo *MockUserRepository) {
+				repo.On("Exists", "nonexistent").Return(false)
+			},
+			expectedError: ErrNotFound,
+			expectedUser:  nil,
+		},
+		{
+			name:     "get user error",
+			userID:   "user1",
+			isActive: true,
+			mockSetup: func(repo *MockUserRepository) {
+				repo.On("Exists", "user1").Return(true)
+				repo.On("GetByID", "user1").Return((*models.User)(nil), errors.New("database error"))
+			},
+			expectedError: ErrNotFound,
+			expectedUser:  nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := &MockUserRepository{}
+			tt.mockSetup(repo)
+
+			service := NewUserService(repo)
+			result, err := service.SetActive(tt.userID, tt.isActive)
+
+			if tt.expectedError != nil {
+				assert.Error(t, err)
+				assert.ErrorIs(t, err, tt.expectedError)
+				assert.Nil(t, result)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, result)
+				assert.Equal(t, tt.expectedUser.UserID, result.UserID)
+				assert.Equal(t, tt.expectedUser.Username, result.Username)
+				assert.Equal(t, tt.expectedUser.TeamName, result.TeamName)
+				assert.Equal(t, tt.expectedUser.IsActive, result.IsActive)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestUserService_GetReviewe(t *testing.T) {
+	tests := []struct {
+		name            string
+		userID          string
+		mockSetup       func(repo *MockUserRepository)
+		expectedError   error
+		expectedReviews []*models.PullRequestShort
+	}{
+		{
+			name:   "successful get reviews",
+			userID: "user1",
+			mockSetup: func(repo *MockUserRepository) {
+				repo.On("Exists", "user1").Return(true)
+				repo.On("GetReview", "user1").Return([]*models.PullRequestShort{
+					{
+						PullRequestID:   "pr-1",
+						PullRequestName: "Test PR 1",
+						AuthorID:        "user2",
+					},
+					{
+						PullRequestID:   "pr-2",
+						PullRequestName: "Test PR 2",
+						AuthorID:        "user3",
+					},
+				}, nil)
+			},
+			expectedError: nil,
+			expectedReviews: []*models.PullRequestShort{
+				{
+					PullRequestID:   "pr-1",
+					PullRequestName: "Test PR 1",
+					AuthorID:        "user2",
+				},
+				{
+					PullRequestID:   "pr-2",
+					PullRequestName: "Test PR 2",
+					AuthorID:        "user3",
+				},
+			},
+		},
+		{
+			name:   "user not found",
+			userID: "nonexistent",
+			mockSetup: func(repo *MockUserRepository) {
+				repo.On("Exists", "nonexistent").Return(false)
+			},
+			expectedError:   ErrNotFound,
+			expectedReviews: nil,
+		},
+		{
+			name:   "get reviews error",
+			userID: "user1",
+			mockSetup: func(repo *MockUserRepository) {
+				repo.On("Exists", "user1").Return(true)
+				repo.On("GetReview", "user1").Return([]*models.PullRequestShort(nil), errors.New("database error"))
+			},
+			expectedError:   nil,
+			expectedReviews: nil,
+		},
+		{
+			name:   "empty reviews list",
+			userID: "user1",
+			mockSetup: func(repo *MockUserRepository) {
+				repo.On("Exists", "user1").Return(true)
+				repo.On("GetReview", "user1").Return([]*models.PullRequestShort{}, nil)
+			},
+			expectedError:   nil,
+			expectedReviews: []*models.PullRequestShort{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := &MockUserRepository{}
+			tt.mockSetup(repo)
+
+			service := NewUserService(repo)
+			result, err := service.GetReviewe(tt.userID)
+
+			if tt.expectedError != nil {
+				assert.Error(t, err)
+				assert.ErrorIs(t, err, tt.expectedError)
+				assert.Nil(t, result)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedReviews, result)
+			}
+
+			repo.AssertExpectations(t)
 		})
 	}
 }
