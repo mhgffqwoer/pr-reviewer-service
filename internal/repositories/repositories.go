@@ -7,7 +7,6 @@ import (
 	"github.com/mhgffqwoer/pr-service/internal/models"
 )
 
-// PullRequestRepository
 type PullRequestRepository struct {
 	db *sqlx.DB
 }
@@ -100,7 +99,6 @@ func (r *PullRequestRepository) Merge(prID string) error {
 	return err
 }
 
-// TeamRepository
 type TeamRepository struct {
 	db *sqlx.DB
 }
@@ -196,7 +194,6 @@ func (r *TeamRepository) Save(team *models.Team) error {
 	return nil
 }
 
-// UserRepository
 type UserRepository struct {
 	db *sqlx.DB
 }

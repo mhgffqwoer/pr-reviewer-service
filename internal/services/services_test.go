@@ -1,3 +1,5 @@
+//go:build unit
+
 package services
 
 import (
@@ -10,7 +12,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// Mock repositories for testing
 type MockPullRequestRepository struct {
 	mock.Mock
 }
@@ -90,7 +91,6 @@ func (m *MockTeamRepository) Save(team *models.Team) error {
 	return args.Error(0)
 }
 
-// PullRequestService tests
 func TestPullRequestService_Create(t *testing.T) {
 	tests := []struct {
 		name              string
@@ -264,16 +264,16 @@ func TestPullRequestService_Merge(t *testing.T) {
 			name: "successful merge",
 			prID: "pr-1",
 			mockSetup: func(prRepo *MockPullRequestRepository) {
-				prRepo.On("Merge", "pr-1").Return(nil)
 				prRepo.On("GetByID", "pr-1").Return(&models.PullRequest{
 					PullRequestID:     "pr-1",
 					PullRequestName:   "Test PR",
 					AuthorID:          "user1",
-					Status:            models.StatusMerged,
+					Status:            models.StatusOpen,
 					AssignedReviewers: []string{"user2", "user3"},
 					CreatedAt:         &time.Time{},
-					MergedAt:          &time.Time{},
+					MergedAt:          nil,
 				}, nil)
+				prRepo.On("Merge", "pr-1").Return(nil)
 			},
 			expectedError: nil,
 		},
@@ -281,7 +281,7 @@ func TestPullRequestService_Merge(t *testing.T) {
 			name: "PR not found",
 			prID: "pr-1",
 			mockSetup: func(prRepo *MockPullRequestRepository) {
-				prRepo.On("Merge", "pr-1").Return(ErrNotFound)
+				prRepo.On("GetByID", "pr-1").Return((*models.PullRequest)(nil), ErrNotFound)
 			},
 			expectedError: ErrNotFound,
 		},
@@ -442,7 +442,6 @@ func TestPullRequestService_Reassign(t *testing.T) {
 	}
 }
 
-// TeamService tests
 func TestTeamService_AddTeam(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -563,7 +562,6 @@ func TestTeamService_GetTeam(t *testing.T) {
 	}
 }
 
-// UserService tests
 func TestUserService_SetActive(t *testing.T) {
 	tests := []struct {
 		name          string

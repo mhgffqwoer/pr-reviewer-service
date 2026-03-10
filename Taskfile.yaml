@@ -1,0 +1,35 @@
+version: '3'
+
+vars:
+  COMPOSE_FILE: deployment/docker-compose.yaml
+  TEST_COMPOSE_FILE: deployment/docker-compose.test.yaml
+  ENV_FILE: .env
+
+tasks:
+  env:
+    internal: true
+    cmds:
+      - test -f {{.ENV_FILE}} || cp .env.example {{.ENV_FILE}}
+    status:
+      - test -f {{.ENV_FILE}}
+
+  up:
+    desc: Поднять основную инфраструктуру (БД, Kafka и т.д.)
+    deps: [env]
+    cmds:
+      - docker-compose -f {{.COMPOSE_FILE}} --env-file {{.ENV_FILE}} up --build -d
+
+  down:
+    desc: Остановить основную инфраструктуру
+    deps: [env]
+    cmds:
+      - docker-compose -f {{.COMPOSE_FILE}} --env-file {{.ENV_FILE}} down -v
+
+  test-integration:
+    desc: Запустить интеграционные тесты с выделенной БД
+    cmds:
+      - echo "Starting test database..."
+      - docker-compose -f {{.TEST_COMPOSE_FILE}} up -d
+      - echo "Waiting for PG to be ready..."
+      - defer: docker-compose -f {{.TEST_COMPOSE_FILE}} down -v
+      - go test -tags=integration -v ./tests/...

@@ -1,10 +1,10 @@
 package services
 
 import (
-	"slices"
 	"errors"
 	"fmt"
 	"math/rand/v2"
+	"slices"
 	"time"
 
 	"github.com/mhgffqwoer/pr-service/internal/logger"
@@ -12,10 +12,10 @@ import (
 )
 
 var (
-	ErrPRExists = errors.New("PR_EXISTS")
-	ErrNotFound = errors.New("NOT_FOUND")
+	ErrPRExists   = errors.New("PR_EXISTS")
+	ErrNotFound   = errors.New("NOT_FOUND")
 	ErrTeamExists = errors.New("TEAM_EXISTS")
-	ErrPRMerged = errors.New("PR_MERGED")
+	ErrPRMerged   = errors.New("PR_MERGED")
 )
 
 type Service struct {
@@ -32,7 +32,6 @@ func NewService(prRepo PullRequestRepository, userRepo UserRepository, teamRepo 
 	}
 }
 
-// PullRequestRepository interface
 type PullRequestRepository interface {
 	Exists(prID string) bool
 	GetByID(prID string) (*models.PullRequest, error)
@@ -40,14 +39,12 @@ type PullRequestRepository interface {
 	Merge(prID string) error
 }
 
-// TeamRepository interface
 type TeamRepository interface {
 	GetByName(teamName string) (*models.Team, error)
 	Save(team *models.Team) error
 	Exists(teamName string) bool
 }
 
-// UserRepository interface
 type UserRepository interface {
 	GetByID(userID string) (*models.User, error)
 	Exists(userID string) bool
@@ -55,7 +52,6 @@ type UserRepository interface {
 	GetReview(userID string) ([]*models.PullRequestShort, error)
 }
 
-// PullRequestService
 type PullRequestService struct {
 	prRepo   PullRequestRepository
 	userRepo UserRepository
@@ -121,16 +117,30 @@ func (s *PullRequestService) Create(prID, prName, authorID string) (*models.Pull
 }
 
 func (s *PullRequestService) Merge(prID string) (*models.PullRequest, error) {
-	if err := s.prRepo.Merge(prID); err != nil {
+	pr, err := s.prRepo.GetByID(prID)
+	if err != nil {
 		return nil, err
 	}
 
-	pr, err := s.prRepo.GetByID(prID)
-	if err != nil {
-		return nil, ErrNotFound
+	if pr.Status == models.StatusMerged {
+		return nil, ErrPRMerged
 	}
 
+	err = s.prRepo.Merge(prID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Update the status to merged
+	pr.Status = models.StatusMerged
+	now := time.Now()
+	pr.MergedAt = &now
+
 	return pr, nil
+}
+
+func (s *PullRequestService) GetByID(prID string) (*models.PullRequest, error) {
+	return s.prRepo.GetByID(prID)
 }
 
 func (s *PullRequestService) Reassign(prID, oldReviewerID string) (*models.PullRequest, string, error) {
@@ -197,7 +207,6 @@ func contains(list []string, v string) bool {
 	return slices.Contains(list, v)
 }
 
-// TeamService
 type TeamService struct {
 	repo TeamRepository
 }
@@ -223,7 +232,6 @@ func (s *TeamService) GetTeam(teamName string) (*models.Team, error) {
 	return team, nil
 }
 
-// UserService
 type UserService struct {
 	repo UserRepository
 }
