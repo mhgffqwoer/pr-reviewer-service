@@ -1,6 +1,7 @@
 package services
 
 import (
+	"slices"
 	"errors"
 	"fmt"
 	"math/rand/v2"
@@ -13,9 +14,25 @@ import (
 var (
 	ErrPRExists = errors.New("PR_EXISTS")
 	ErrNotFound = errors.New("NOT_FOUND")
+	ErrTeamExists = errors.New("TEAM_EXISTS")
 	ErrPRMerged = errors.New("PR_MERGED")
 )
 
+type Service struct {
+	TeamService        *TeamService
+	UserService        *UserService
+	PullRequestService *PullRequestService
+}
+
+func NewService(prRepo PullRequestRepository, userRepo UserRepository, teamRepo TeamRepository) *Service {
+	return &Service{
+		TeamService:        NewTeamService(teamRepo),
+		UserService:        NewUserService(userRepo),
+		PullRequestService: NewPullRequestService(prRepo, userRepo, teamRepo),
+	}
+}
+
+// PullRequestRepository interface
 type PullRequestRepository interface {
 	Exists(prID string) bool
 	GetByID(prID string) (*models.PullRequest, error)
@@ -23,6 +40,22 @@ type PullRequestRepository interface {
 	Merge(prID string) error
 }
 
+// TeamRepository interface
+type TeamRepository interface {
+	GetByName(teamName string) (*models.Team, error)
+	Save(team *models.Team) error
+	Exists(teamName string) bool
+}
+
+// UserRepository interface
+type UserRepository interface {
+	GetByID(userID string) (*models.User, error)
+	Exists(userID string) bool
+	Save(user *models.User) error
+	GetReview(userID string) ([]*models.PullRequestShort, error)
+}
+
+// PullRequestService
 type PullRequestService struct {
 	prRepo   PullRequestRepository
 	userRepo UserRepository
@@ -35,7 +68,6 @@ func NewPullRequestService(repo PullRequestRepository, userRepo UserRepository, 
 		userRepo: userRepo,
 		teamRepo: teamRepo,
 	}
-
 }
 
 func (s *PullRequestService) Create(prID, prName, authorID string) (*models.PullRequest, error) {
@@ -69,7 +101,7 @@ func (s *PullRequestService) Create(prID, prName, authorID string) (*models.Pull
 	if num > 0 {
 		reviewers = make([]string, num)
 		perm := rand.Perm(len(candidates))
-		for i := 0; i < num; i++ {
+		for i := range num {
 			reviewers[i] = candidates[perm[i]]
 		}
 	}
@@ -100,6 +132,7 @@ func (s *PullRequestService) Merge(prID string) (*models.PullRequest, error) {
 
 	return pr, nil
 }
+
 func (s *PullRequestService) Reassign(prID, oldReviewerID string) (*models.PullRequest, string, error) {
 	pr, err := s.prRepo.GetByID(prID)
 	if err != nil {
@@ -161,10 +194,64 @@ func (s *PullRequestService) Reassign(prID, oldReviewerID string) (*models.PullR
 }
 
 func contains(list []string, v string) bool {
-	for _, s := range list {
-		if s == v {
-			return true
-		}
+	return slices.Contains(list, v)
+}
+
+// TeamService
+type TeamService struct {
+	repo TeamRepository
+}
+
+func NewTeamService(repo TeamRepository) *TeamService {
+	return &TeamService{repo: repo}
+}
+
+func (s *TeamService) AddTeam(team *models.Team) (*models.Team, error) {
+	if s.repo.Exists(team.TeamName) {
+		return nil, ErrTeamExists
 	}
-	return false
+
+	_ = s.repo.Save(team)
+	return team, nil
+}
+
+func (s *TeamService) GetTeam(teamName string) (*models.Team, error) {
+	team, err := s.repo.GetByName(teamName)
+	if err != nil {
+		return nil, ErrNotFound
+	}
+	return team, nil
+}
+
+// UserService
+type UserService struct {
+	repo UserRepository
+}
+
+func NewUserService(repo UserRepository) *UserService {
+	return &UserService{repo: repo}
+}
+
+func (s *UserService) SetActive(userID string, isActive bool) (*models.User, error) {
+	if !s.repo.Exists(userID) {
+		return nil, ErrNotFound
+	}
+
+	user, err := s.repo.GetByID(userID)
+	if err != nil {
+		return nil, ErrNotFound
+	}
+	user.IsActive = isActive
+	_ = s.repo.Save(user)
+
+	return user, nil
+}
+
+func (s *UserService) GetReviewe(userID string) ([]*models.PullRequestShort, error) {
+	if !s.repo.Exists(userID) {
+		return nil, ErrNotFound
+	}
+
+	reviews, _ := s.repo.GetReview(userID)
+	return reviews, nil
 }
