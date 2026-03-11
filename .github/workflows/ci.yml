@@ -40,21 +40,6 @@ jobs:
     name: Run tests
     runs-on: ubuntu-latest
     needs: build
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_DB: pr_service_test
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -73,7 +58,6 @@ jobs:
       - name: Run integration tests
         run: |
           docker compose -f deployment/docker-compose.test.yaml up -d
-          docker compose -f deployment/docker-compose.test.yaml down -v
           go test -tags=integration -v ./tests/...
 
       - name: Cleanup
