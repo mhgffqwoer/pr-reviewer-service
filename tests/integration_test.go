@@ -30,7 +30,7 @@ type PRServiceTestSuite struct {
 
 func (s *PRServiceTestSuite) SetupSuite() {
 	dsn := "postgres://testuser:testpass@localhost:5432/pr_service_test?sslmode=disable"
-	
+
 	// Повторные попытки подключения к базе данных
 	var db *sqlx.DB
 	var err error
@@ -50,37 +50,12 @@ func (s *PRServiceTestSuite) SetupSuite() {
 
 	s.db = db
 
-	s.ensureSchema()
-
 	prRepo := repositories.NewPullRequestRepository(db)
 	userRepo := repositories.NewUserRepository(db)
 	teamRepo := repositories.NewTeamRepository(db)
 
 	s.service = services.NewService(prRepo, userRepo, teamRepo)
 	s.handler = handlers.New(s.service)
-}
-
-func (s *PRServiceTestSuite) ensureSchema() {
-	schema := `
-	CREATE TABLE IF NOT EXISTS teams (
-		name TEXT PRIMARY KEY
-	);
-	CREATE TABLE IF NOT EXISTS users (
-		user_id TEXT PRIMARY KEY,
-		username TEXT NOT NULL,
-		team_name TEXT REFERENCES teams(name),
-		is_active BOOLEAN DEFAULT true
-	);
-	CREATE TABLE IF NOT EXISTS pull_requests (
-		pull_request_id TEXT PRIMARY KEY,
-		pull_request_name TEXT,
-		author_id TEXT,
-		status TEXT,
-		assigned_reviewers JSONB,
-		created_at TIMESTAMP WITH TIME ZONE,
-		merged_at TIMESTAMP WITH TIME ZONE
-	);`
-	s.db.MustExec(schema)
 }
 
 func (s *PRServiceTestSuite) TearDownTest() {
@@ -200,12 +175,17 @@ func (s *PRServiceTestSuite) TestSetUserActive() {
 }
 
 func (s *PRServiceTestSuite) TestMergeAndReviewHistory() {
-	s.db.Exec("INSERT INTO teams (name) VALUES ('Beta')")
-	s.db.Exec("INSERT INTO users (user_id, username, team_name, is_active) VALUES ('rev1', 'Reviewer', 'Beta', true)")
-	s.db.Exec(`INSERT INTO pull_requests (pull_request_id, pull_request_name, author_id, status, assigned_reviewers) 
-               VALUES ('PR-M', 'Fix', 'auth1', 'OPEN', '["rev1"]')`)
 
-	reqBody, _ := json.Marshal(map[string]string{"pull_request_id": "PR-M"})
+	s.db.MustExec("INSERT INTO teams (name) VALUES ('Beta')")
+	s.db.MustExec("INSERT INTO users (user_id, username, team_name, is_active) VALUES ('auth1', 'Author', 'Beta', true)")
+	s.db.MustExec("INSERT INTO users (user_id, username, team_name, is_active) VALUES ('rev1', 'Reviewer', 'Beta', true)")
+	s.db.MustExec(`
+		INSERT INTO pull_requests (pull_request_id, pull_request_name, author_id, status, assigned_reviewers) 
+		VALUES ('PR-M', 'Fix Critical Bug', 'auth1', 'OPEN', '["rev1"]')
+	`)
+	reqBody, _ := json.Marshal(map[string]string{
+		"pull_request_id": "PR-M",
+	})
 	req := httptest.NewRequest(http.MethodPost, "/pullRequest/merge", bytes.NewBuffer(reqBody))
 	rr := httptest.NewRecorder()
 	s.handler.MergePR(rr, req)
@@ -219,22 +199,34 @@ func (s *PRServiceTestSuite) TestMergeAndReviewHistory() {
 	var res struct {
 		PRs []models.PullRequestShort `json:"pull_requests"`
 	}
-	json.Unmarshal(rr.Body.Bytes(), &res)
-	assert.NotEmpty(s.T(), res.PRs)
-	assert.Equal(s.T(), "MERGED", string(res.PRs[0].Status))
+	err := json.Unmarshal(rr.Body.Bytes(), &res)
+	assert.NoError(s.T(), err)
+
+	assert.NotEmpty(s.T(), res.PRs, "Список PR не должен быть пустым")
+	if len(res.PRs) > 0 {
+		assert.Equal(s.T(), "PR-M", res.PRs[0].PullRequestID)
+		assert.Equal(s.T(), "MERGED", string(res.PRs[0].Status))
+	}
 }
 
 func (s *PRServiceTestSuite) TestCreatePR_Conflict() {
-	s.db.Exec("INSERT INTO teams (name) VALUES ('T1')")
-	s.db.Exec("INSERT INTO users (user_id, username, team_name, is_active) VALUES ('u1', 'U1', 'T1', true)")
-	s.db.Exec("INSERT INTO pull_requests (pull_request_id, author_id, status, assigned_reviewers) VALUES ('EXISTING', 'u1', 'OPEN', '[]')")
+    s.db.MustExec("INSERT INTO teams (name) VALUES ('T1')")
+    s.db.MustExec("INSERT INTO users (user_id, username, team_name, is_active) VALUES ('u1', 'U1', 'T1', true)")
+    s.db.MustExec(`
+        INSERT INTO pull_requests (pull_request_id, pull_request_name, author_id, status, assigned_reviewers) 
+        VALUES ('EXISTING', 'Original Name', 'u1', 'OPEN', '[]')
+    `)
 
-	reqBody, _ := json.Marshal(map[string]string{"pull_request_id": "EXISTING", "author_id": "u1"})
-	req := httptest.NewRequest(http.MethodPost, "/pullRequest/create", bytes.NewBuffer(reqBody))
-	rr := httptest.NewRecorder()
-	s.handler.CreatePR(rr, req)
+    reqBody, _ := json.Marshal(map[string]string{
+        "pull_request_id":   "EXISTING", 
+        "pull_request_name": "New Name",
+        "author_id":         "u1",
+    })
+    req := httptest.NewRequest(http.MethodPost, "/pullRequest/create", bytes.NewBuffer(reqBody))
+    rr := httptest.NewRecorder()
+    s.handler.CreatePR(rr, req)
 
-	assert.Equal(s.T(), http.StatusConflict, rr.Code)
+    assert.Equal(s.T(), http.StatusConflict, rr.Code)
 }
 
 func (s *PRServiceTestSuite) TestReassign_MergedPR() {

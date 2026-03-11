@@ -12,3 +12,19 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  migrate:
+    image: migrate/migrate
+    depends_on:
+      test-db:
+        condition: service_healthy
+    volumes:
+      - ../migrations/:/migrations
+    command:
+      [
+        "-path",
+        "/migrations/",
+        "-database",
+        "postgres://testuser:testpass@test-db:5432/pr_service_test?sslmode=disable",
+        "up",
+      ]
