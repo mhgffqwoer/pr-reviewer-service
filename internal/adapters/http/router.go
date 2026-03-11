@@ -1,4 +1,4 @@
-package router
+package http
 
 import (
 	"net/http"
@@ -8,7 +8,7 @@ type Router struct {
 	mux *http.ServeMux
 }
 
-func New() *Router {
+func NewRouter() *Router {
 	return &Router{
 		mux: http.NewServeMux(),
 	}

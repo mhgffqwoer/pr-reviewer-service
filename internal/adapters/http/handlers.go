@@ -1,4 +1,4 @@
-package handlers
+package http
 
 import (
 	"encoding/json"
@@ -17,7 +17,7 @@ type Handlers struct {
 	prService   *services.PullRequestService
 }
 
-func New(service *services.Service) *Handlers {
+func NewHandlers(service *services.Service) *Handlers {
 	return &Handlers{
 		teamService: service.TeamService,
 		userService: service.UserService,

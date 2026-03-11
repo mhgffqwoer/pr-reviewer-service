@@ -15,16 +15,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/mhgffqwoer/pr-service/internal/handlers"
+	httpapi "github.com/mhgffqwoer/pr-service/internal/adapters/http"
+	"github.com/mhgffqwoer/pr-service/internal/adapters/postgres"
 	"github.com/mhgffqwoer/pr-service/internal/models"
-	"github.com/mhgffqwoer/pr-service/internal/repositories"
 	"github.com/mhgffqwoer/pr-service/internal/services"
 )
 
 type PRServiceTestSuite struct {
 	suite.Suite
 	db      *sqlx.DB
-	handler *handlers.Handlers
+	handler *httpapi.Handlers
 	service *services.Service
 }
 
@@ -50,12 +50,12 @@ func (s *PRServiceTestSuite) SetupSuite() {
 
 	s.db = db
 
-	prRepo := repositories.NewPullRequestRepository(db)
-	userRepo := repositories.NewUserRepository(db)
-	teamRepo := repositories.NewTeamRepository(db)
+	prRepo := postgres.NewPullRequestRepository(db)
+	userRepo := postgres.NewUserRepository(db)
+	teamRepo := postgres.NewTeamRepository(db)
 
 	s.service = services.NewService(prRepo, userRepo, teamRepo)
-	s.handler = handlers.New(s.service)
+	s.handler = httpapi.NewHandlers(s.service)
 }
 
 func (s *PRServiceTestSuite) TearDownTest() {
@@ -210,23 +210,23 @@ func (s *PRServiceTestSuite) TestMergeAndReviewHistory() {
 }
 
 func (s *PRServiceTestSuite) TestCreatePR_Conflict() {
-    s.db.MustExec("INSERT INTO teams (name) VALUES ('T1')")
-    s.db.MustExec("INSERT INTO users (user_id, username, team_name, is_active) VALUES ('u1', 'U1', 'T1', true)")
-    s.db.MustExec(`
+	s.db.MustExec("INSERT INTO teams (name) VALUES ('T1')")
+	s.db.MustExec("INSERT INTO users (user_id, username, team_name, is_active) VALUES ('u1', 'U1', 'T1', true)")
+	s.db.MustExec(`
         INSERT INTO pull_requests (pull_request_id, pull_request_name, author_id, status, assigned_reviewers) 
         VALUES ('EXISTING', 'Original Name', 'u1', 'OPEN', '[]')
     `)
 
-    reqBody, _ := json.Marshal(map[string]string{
-        "pull_request_id":   "EXISTING", 
-        "pull_request_name": "New Name",
-        "author_id":         "u1",
-    })
-    req := httptest.NewRequest(http.MethodPost, "/pullRequest/create", bytes.NewBuffer(reqBody))
-    rr := httptest.NewRecorder()
-    s.handler.CreatePR(rr, req)
+	reqBody, _ := json.Marshal(map[string]string{
+		"pull_request_id":   "EXISTING",
+		"pull_request_name": "New Name",
+		"author_id":         "u1",
+	})
+	req := httptest.NewRequest(http.MethodPost, "/pullRequest/create", bytes.NewBuffer(reqBody))
+	rr := httptest.NewRecorder()
+	s.handler.CreatePR(rr, req)
 
-    assert.Equal(s.T(), http.StatusConflict, rr.Code)
+	assert.Equal(s.T(), http.StatusConflict, rr.Code)
 }
 
 func (s *PRServiceTestSuite) TestReassign_MergedPR() {
