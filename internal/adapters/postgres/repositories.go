@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/mhgffqwoer/pr-service/internal/domain/models"
+	"github.com/mhgffqwoer/pr-reviewer-service/internal/domain/models"
 )
 
 type PullRequestRepository struct {

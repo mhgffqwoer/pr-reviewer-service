@@ -15,10 +15,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
-	httpapi "github.com/mhgffqwoer/pr-service/internal/adapters/http"
-	"github.com/mhgffqwoer/pr-service/internal/adapters/postgres"
-	"github.com/mhgffqwoer/pr-service/internal/domain/models"
-	"github.com/mhgffqwoer/pr-service/internal/domain/services"
+	httpapi "github.com/mhgffqwoer/pr-reviewer-service/internal/adapters/http"
+	"github.com/mhgffqwoer/pr-reviewer-service/internal/adapters/postgres"
+	"github.com/mhgffqwoer/pr-reviewer-service/internal/domain/models"
+	"github.com/mhgffqwoer/pr-reviewer-service/internal/domain/services"
 )
 
 type PRServiceTestSuite struct {

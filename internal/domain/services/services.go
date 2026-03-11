@@ -7,8 +7,8 @@ import (
 	"slices"
 	"time"
 
-	"github.com/mhgffqwoer/pr-service/internal/domain/models"
-	"github.com/mhgffqwoer/pr-service/internal/logger"
+	"github.com/mhgffqwoer/pr-reviewer-service/internal/domain/models"
+	"github.com/mhgffqwoer/pr-reviewer-service/internal/logger"
 )
 
 var (

@@ -9,11 +9,11 @@ import (
 	"syscall"
 	"time"
 
-	httpapi "github.com/mhgffqwoer/pr-service/internal/adapters/http"
-	"github.com/mhgffqwoer/pr-service/internal/adapters/postgres"
-	"github.com/mhgffqwoer/pr-service/internal/config"
-	"github.com/mhgffqwoer/pr-service/internal/domain/services"
-	"github.com/mhgffqwoer/pr-service/internal/logger"
+	httpapi "github.com/mhgffqwoer/pr-reviewer-service/internal/adapters/http"
+	"github.com/mhgffqwoer/pr-reviewer-service/internal/adapters/postgres"
+	"github.com/mhgffqwoer/pr-reviewer-service/internal/config"
+	"github.com/mhgffqwoer/pr-reviewer-service/internal/domain/services"
+	"github.com/mhgffqwoer/pr-reviewer-service/internal/logger"
 	"go.uber.org/zap"
 )
 
