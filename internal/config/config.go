@@ -32,8 +32,10 @@ type LoggingConfig struct {
 }
 
 type DatabaseConfig struct {
-	URL            string `mapstructure:"url" validate:"required"`
-	MaxConnections int    `mapstructure:"max_connections" validate:"required,min=1,max=100"`
+	URL                   string `mapstructure:"url" validate:"required"`
+	MaxConnections        int    `mapstructure:"max_connections" validate:"required,min=1,max=100"`
+	MaxIdleConnections    int    `mapstructure:"max_idle_connections" validate:"required,min=0,max=100"`
+	ConnectionMaxLifetime int    `mapstructure:"connection_max_lifetime" validate:"required,min=1,max=1440"`
 }
 
 var (

@@ -1,5 +1,6 @@
 server:
   port: 8080
+
 logging:
   level: debug
   rotation:
@@ -9,7 +10,7 @@ logging:
     max_age: 1
     duplicate_to_console: true
 database: 
-  url: "postgres://user:password@localhost:5432/pr_service?sslmode=disable"
+  url: "postgres://testuser:testpass@localhost:5432/pr_service_test?sslmode=disable"
   max_connections: 25
   max_idle_connections: 12
   connection_max_lifetime: 30

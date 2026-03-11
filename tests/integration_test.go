@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -29,10 +30,24 @@ type PRServiceTestSuite struct {
 
 func (s *PRServiceTestSuite) SetupSuite() {
 	dsn := "postgres://testuser:testpass@localhost:5432/pr_service_test?sslmode=disable"
-	db, err := sqlx.Connect("postgres", dsn)
-	if err != nil {
-		s.T().Fatalf("Failed to connect to test database: %v", err)
+	
+	// Повторные попытки подключения к базе данных
+	var db *sqlx.DB
+	var err error
+	maxRetries := 30
+	retryInterval := 2 * time.Second
+
+	for i := range maxRetries {
+		db, err = sqlx.Connect("postgres", dsn)
+		if err == nil {
+			break
+		}
+		if i == maxRetries-1 {
+			s.T().Fatalf("Failed to connect to test database after %d attempts: %v", maxRetries, err)
+		}
+		time.Sleep(retryInterval)
 	}
+
 	s.db = db
 
 	s.ensureSchema()

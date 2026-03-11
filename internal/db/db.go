@@ -25,8 +25,8 @@ func Connect(cfg *config.DatabaseConfig) (*sqlx.DB, error) {
 		}
 
 		localPool.SetMaxOpenConns(cfg.MaxConnections)
-		localPool.SetMaxIdleConns(cfg.MaxConnections / 2)
-		localPool.SetConnMaxLifetime(1 * time.Minute)
+		localPool.SetMaxIdleConns(cfg.MaxIdleConnections)
+		localPool.SetConnMaxLifetime(time.Duration(cfg.ConnectionMaxLifetime) * time.Minute)
 
 		if pingErr := localPool.Ping(); pingErr != nil {
 			err = fmt.Errorf("DB ping failed: %w", pingErr)
