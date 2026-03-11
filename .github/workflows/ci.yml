@@ -69,11 +69,11 @@ jobs:
 
       - name: Run integration tests
         run: |
-          docker-compose -f deployment/docker-compose.test.yaml up -d
-          docker-compose -f deployment/docker-compose.test.yaml down -v
+          docker compose -f deployment/docker-compose.test.yaml up -d
+          docker compose -f deployment/docker-compose.test.yaml down -v
           go test -tags=integration -v ./tests/...
 
       - name: Cleanup
         if: always()
         run: |
-          docker-compose -f deployment/docker-compose.test.yaml down -v
+          docker compose -f deployment/docker-compose.test.yaml down -v
