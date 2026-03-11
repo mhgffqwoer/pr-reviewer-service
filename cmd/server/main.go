@@ -1,14 +1,19 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
-	"github.com/mhgffqwoer/pr-service/internal/adapters/http"
+	httpapi "github.com/mhgffqwoer/pr-service/internal/adapters/http"
 	"github.com/mhgffqwoer/pr-service/internal/adapters/postgres"
-	"github.com/mhgffqwoer/pr-service/internal/app"
 	"github.com/mhgffqwoer/pr-service/internal/config"
+	"github.com/mhgffqwoer/pr-service/internal/domain/services"
 	"github.com/mhgffqwoer/pr-service/internal/logger"
-	"github.com/mhgffqwoer/pr-service/internal/services"
 	"go.uber.org/zap"
 )
 
@@ -34,17 +39,39 @@ func main() {
 
 	service := services.NewService(prRepo, userRepo, teamRepo)
 
-	r := http.NewRouter()
-	h := http.NewHandlers(service)
-	r.HandleFunc("/health", h.Health)
-	r.HandleFunc("/team/add", h.CreateTeam)
-	r.HandleFunc("/team/get", h.GetTeam)
-	r.HandleFunc("/users/setIsActive", h.SetUserActive)
-	r.HandleFunc("/users/getReview", h.GetReview)
-	r.HandleFunc("/pullRequest/create", h.CreatePR)
-	r.HandleFunc("/pullRequest/merge", h.MergePR)
-	r.HandleFunc("/pullRequest/reassign", h.ReassignPR)
+	mux := http.NewServeMux()
+	h := httpapi.NewHandlers(service)
+	mux.HandleFunc("/health", h.Health)
+	mux.HandleFunc("/team/add", h.CreateTeam)
+	mux.HandleFunc("/team/get", h.GetTeam)
+	mux.HandleFunc("/users/setIsActive", h.SetUserActive)
+	mux.HandleFunc("/users/getReview", h.GetReview)
+	mux.HandleFunc("/pullRequest/create", h.CreatePR)
+	mux.HandleFunc("/pullRequest/merge", h.MergePR)
+	mux.HandleFunc("/pullRequest/reassign", h.ReassignPR)
 
-	srv := app.New(cfg.Server, r)
-	srv.Start()
+	srv := &http.Server{
+		Addr:              fmt.Sprintf(":%d", cfg.Server.Port),
+		Handler:           mux,
+		ReadHeaderTimeout: 30 * time.Second,
+	}
+
+	go func() {
+		logger.Get().Infow("Server is running", "port", srv.Addr)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Get().Fatalw("Server failed", zap.Error(err))
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	logger.Get().Infow("Shutting down server...")
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		logger.Get().Fatalw("Server forced to shutdown", zap.Error(err))
+	}
+	logger.Get().Infow("Server exiting")
 }

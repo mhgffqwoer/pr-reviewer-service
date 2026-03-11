@@ -17,8 +17,8 @@ import (
 
 	httpapi "github.com/mhgffqwoer/pr-service/internal/adapters/http"
 	"github.com/mhgffqwoer/pr-service/internal/adapters/postgres"
-	"github.com/mhgffqwoer/pr-service/internal/models"
-	"github.com/mhgffqwoer/pr-service/internal/services"
+	"github.com/mhgffqwoer/pr-service/internal/domain/models"
+	"github.com/mhgffqwoer/pr-service/internal/domain/services"
 )
 
 type PRServiceTestSuite struct {

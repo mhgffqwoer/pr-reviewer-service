@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/mhgffqwoer/pr-service/internal/domain/models"
+	"github.com/mhgffqwoer/pr-service/internal/domain/services"
 	"github.com/mhgffqwoer/pr-service/internal/logger"
-	"github.com/mhgffqwoer/pr-service/internal/models"
-	"github.com/mhgffqwoer/pr-service/internal/services"
 )
 
 type Handlers struct {
