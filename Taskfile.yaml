@@ -33,3 +33,8 @@ tasks:
       - echo "Waiting for PG to be ready..."
       - defer: docker-compose -f {{.TEST_COMPOSE_FILE}} down -v
       - go test -tags=integration -v ./tests/...
+
+  test-unit:
+    desc: Запустить unit тесты для бизнесс логики
+    cmds:
+      - go test -tags=unit -v ./internal/...

@@ -2,14 +2,15 @@ package main
 
 import (
 	"fmt"
-	"github.com/mhgffqwoer/pr-service/internal/repositories"
-	"github.com/mhgffqwoer/pr-service/internal/services"
-	"github.com/mhgffqwoer/pr-service/internal/handlers"
-	"github.com/mhgffqwoer/pr-service/internal/router"
+
 	"github.com/mhgffqwoer/pr-service/internal/config"
 	"github.com/mhgffqwoer/pr-service/internal/db"
+	"github.com/mhgffqwoer/pr-service/internal/handlers"
 	"github.com/mhgffqwoer/pr-service/internal/logger"
+	"github.com/mhgffqwoer/pr-service/internal/repositories"
+	"github.com/mhgffqwoer/pr-service/internal/router"
 	"github.com/mhgffqwoer/pr-service/internal/server"
+	"github.com/mhgffqwoer/pr-service/internal/services"
 	"go.uber.org/zap"
 )
 
@@ -17,7 +18,7 @@ func main() {
 	if err := config.Init(); err != nil {
 		panic(fmt.Sprintf("Config init failed: %v", err))
 	}
-	
+
 	cfg := config.Get()
 
 	log := logger.InitLogger(cfg.Logging)
