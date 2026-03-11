@@ -58,7 +58,6 @@ func InitLogger(cfg *config.LoggingConfig) *zap.SugaredLogger {
 
 func Get() *zap.SugaredLogger {
 	if log == nil {
-
 		zapLogger, _ := zap.NewProduction()
 		log = zapLogger.Sugar()
 	}

@@ -31,7 +31,6 @@ type PRServiceTestSuite struct {
 func (s *PRServiceTestSuite) SetupSuite() {
 	dsn := "postgres://testuser:testpass@localhost:5432/pr_service_test?sslmode=disable"
 
-	// Повторные попытки подключения к базе данных
 	var db *sqlx.DB
 	var err error
 	maxRetries := 30

@@ -7,8 +7,8 @@ import (
 	"slices"
 	"time"
 
-	"github.com/mhgffqwoer/pr-service/internal/logger"
 	"github.com/mhgffqwoer/pr-service/internal/domain/models"
+	"github.com/mhgffqwoer/pr-service/internal/logger"
 )
 
 var (
@@ -131,7 +131,6 @@ func (s *PullRequestService) Merge(prID string) (*models.PullRequest, error) {
 		return nil, err
 	}
 
-	// Update the status to merged
 	pr.Status = models.StatusMerged
 	now := time.Now()
 	pr.MergedAt = &now
